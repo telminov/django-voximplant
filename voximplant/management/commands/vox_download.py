@@ -7,12 +7,12 @@ class Command(BaseCommand):
     help = 'Grab data from VoxImplant'
 
     def handle(self, *args, **options):
+        print('Load scenarios...')
+        tools.download_scenarios()
+
         print('Load applications...')
         tools.download_apps()
 
         print('Load rules...')
         tools.download_rules()
-
-        print('Load scenarios...')
-        tools.download_scenarios()
 
