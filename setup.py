@@ -17,5 +17,6 @@ setup(
     license='The MIT License',
     install_requires=[
         'django',
+        'requests',
     ],
 )

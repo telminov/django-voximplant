@@ -4,4 +4,4 @@ from . import models
 
 admin.site.register(models.Application)
 admin.site.register(models.Rule)
-admin.site.register(models.Scenarios)
+admin.site.register(models.Scenario)

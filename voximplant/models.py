@@ -29,7 +29,7 @@ class Rule(models.Model):
         return self.name
 
 
-class Scenarios(models.Model):
+class Scenario(models.Model):
     vox_id = models.BigIntegerField(null=True, unique=True)
     name = models.CharField(max_length=255, unique=True)
     description = models.TextField(blank=True)
