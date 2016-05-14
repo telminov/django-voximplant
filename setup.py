@@ -18,5 +18,6 @@ setup(
     install_requires=[
         'django',
         'requests',
+        # 'djangorestframework',
     ],
 )

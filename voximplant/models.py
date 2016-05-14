@@ -61,3 +61,34 @@ class Rule(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class CallList(models.Model):
+    external_id = models.CharField(max_length=255, null=True, blank=True, unique=True)
+    vox_id = models.BigIntegerField(null=True, unique=True, blank=True)
+    rule = models.ForeignKey(Rule)
+    priority = models.SmallIntegerField(default=1)
+    max_simultaneous = models.SmallIntegerField(default=10)
+    num_attempts = models.SmallIntegerField(default=3)
+    name = models.CharField(max_length=255)
+    interval_seconds = models.IntegerField(default=0)
+    created = models.DateTimeField(auto_now_add=True)
+    started = models.DateTimeField(null=True, blank=True)
+    completed = models.DateTimeField(null=True, blank=True)
+    canceled = models.DateTimeField(null=True, blank=True)
+
+
+class CallListPhone(models.Model):
+    call_list = models.ForeignKey(CallList, related_name='phones')
+    phone_number = models.CharField(max_length=11)
+    custom_data_json = models.TextField()
+    status = models.CharField(max_length=50, blank=True)
+    last_attempt = models.DateTimeField(null=True, blank=True)
+    attempts_left = models.SmallIntegerField(null=True, blank=True)
+    result_data_json = models.TextField(blank=True)
+
+    class Meta:
+        unique_together = ('call_list', 'phone_number')
+
+    def __str__(self):
+        return self.phone_number
