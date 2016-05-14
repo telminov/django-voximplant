@@ -149,6 +149,24 @@ def create_call_list(call_list: models.CallList):
     return result
 
 
+def get_call_list_detail(call_list: models.CallList):
+    url = API_URL + '/GetCallListDetails'
+    params = _get_auth_params()
+    params['list_id'] = call_list.vox_id
+    params['output'] = 'json'
+
+    response = requests.get(url, params=params)
+
+    if response.status_code != 200:
+        raise VoxApiException('Got status code: %s.' % response.status_code, response=response)
+
+    result = response.json()['result']
+    for item in result:
+        item['custom_data'] = json.loads(item['custom_data'])
+        item['phone_number'] = item['custom_data']['phone_number']
+    return result
+
+
 def _get_auth_params() -> dict:
     return {
         'account_id': settings.VOX_USER_ID,

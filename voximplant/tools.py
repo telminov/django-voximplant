@@ -9,6 +9,10 @@ class SendCallListException(Exception):
     pass
 
 
+class DownloadCallListException(Exception):
+    pass
+
+
 def download_scenarios():
     result = api_client.get_scenarios()
 
@@ -98,3 +102,20 @@ def send_call_list(call_list_id: int, force=False):
     call_list.vox_id = result['list_id']
     call_list.started = now()
     call_list.save()
+
+
+def download_call_list(call_list_id: int):
+    call_list = models.CallList.objects.get(id=call_list_id)
+    if not call_list.vox_id:
+        raise DownloadCallListException('Call list with id "%s" have not vox_id' % call_list.id)
+
+    result = api_client.get_call_list_detail(call_list)
+    for item in result:
+        phone = call_list.phones.get(phone_number=item['phone_number'])
+        phone.status = item['status']
+        phone.last_attempt = item['last_attempt']
+        phone.attempts_left = item['attmepts_left']
+        phone.result_data_json = item['result_data']
+        if not phone.completed and item['status'] == 'Processed':
+            phone.completed = now()
+        phone.save()
