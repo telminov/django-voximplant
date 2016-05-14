@@ -5,6 +5,10 @@ from . import models
 from . import api_client
 
 
+class SendCallListException(Exception):
+    pass
+
+
 def download_scenarios():
     result = api_client.get_scenarios()
 
@@ -83,3 +87,14 @@ def upload_scenarios():
         for rule_vox_id in all_rules:
             bind = rule_vox_id in local_rules
             api_client.bind_scenario_rule(scenario.vox_id, rule_vox_id, bind)
+
+
+def send_call_list(call_list_id: int, force=False):
+    call_list = models.CallList.objects.get(id=call_list_id)
+    if not force and call_list.started:
+        raise SendCallListException('Call list with id "%s" already started at "%s"' % (call_list.id, call_list.started))
+
+    result = api_client.create_call_list(call_list)
+    call_list.vox_id = result['list_id']
+    call_list.started = now()
+    call_list.save()

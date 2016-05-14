@@ -70,7 +70,7 @@ class CallList(models.Model):
     priority = models.SmallIntegerField(default=1)
     max_simultaneous = models.SmallIntegerField(default=10)
     num_attempts = models.SmallIntegerField(default=3)
-    name = models.CharField(max_length=255)
+    name = models.CharField(max_length=255, default='call_list')
     interval_seconds = models.IntegerField(default=0)
     created = models.DateTimeField(auto_now_add=True)
     started = models.DateTimeField(null=True, blank=True)
