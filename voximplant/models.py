@@ -91,10 +91,22 @@ class CallList(models.Model):
 
 
 class CallListPhone(models.Model):
+    STATUS_NEW = 'New'
+    STATUS_IN_PROGRESS = 'In progress'
+    STATUS_PROCESSED = 'Processed'
+    STATUS_ERROR = 'Error'
+    STATUS_CHOICES = (
+        ('', ''),
+        (STATUS_NEW, STATUS_NEW),
+        (STATUS_IN_PROGRESS, STATUS_IN_PROGRESS),
+        (STATUS_PROCESSED, STATUS_PROCESSED),
+        (STATUS_ERROR, STATUS_ERROR),
+    )
+
     call_list = models.ForeignKey(CallList, related_name='phones')
     phone_number = models.CharField(max_length=11)
     custom_data_json = models.TextField()
-    status = models.CharField(max_length=50, blank=True)
+    status = models.CharField(max_length=50, blank=True, choices=STATUS_CHOICES)
     last_attempt = models.DateTimeField(null=True, blank=True)
     attempts_left = models.SmallIntegerField(null=True, blank=True)
     result_data_json = models.TextField(blank=True)

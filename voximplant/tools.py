@@ -167,9 +167,9 @@ def call_list_download(call_list_id: int, verbosity: int = 1):
     for item in result:
         phone = call_list.phones.get(phone_number=item['phone_number'])
         phone.status = item['status']
-        phone.last_attempt = item['last_attempt'] + 'Z'
+        phone.last_attempt = item['last_attempt'] + 'Z' if item['last_attempt'] else None
         phone.attempts_left = item['attmepts_left']
-        phone.result_data_json = item['result_data']
+        phone.result_data_json = item.get('result_data', '')
         if not phone.completed and item['status'] == 'Processed':
             phone.completed = now()
         phone.save()
