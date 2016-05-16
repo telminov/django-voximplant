@@ -94,31 +94,31 @@ def upload_scenarios():
             api_client.bind_scenario_rule(scenario.vox_id, rule_vox_id, bind)
 
 
-def send_call_list(call_list_id: int, force=False):
+def call_list_send(call_list_id: int, force=False):
     call_list = models.CallList.objects.get(id=call_list_id)
     if not force and call_list.started:
         raise SendCallListException(
             'Call list with id "%s" already started at "%s"' % (call_list.id, call_list.started))
 
-    result = api_client.create_call_list(call_list)
+    result = api_client.call_list_create(call_list)
     call_list.vox_id = result['list_id']
     call_list.started = now()
     call_list.save()
 
 
-def stop_call_list(call_list_id: int):
+def call_list_stop(call_list_id: int):
     call_list = models.CallList.objects.get(id=call_list_id)
-    api_client.stop_call_list(call_list)
+    api_client.call_list_stop(call_list)
     call_list.canceled = now()
     call_list.save()
 
 
-def download_call_list(call_list_id: int, verbosity: int = 1):
+def call_list_download(call_list_id: int, verbosity: int = 1):
     call_list = models.CallList.objects.get(id=call_list_id)
     if not call_list.vox_id:
         raise DownloadCallListException('Call list with id "%s" have not vox_id' % call_list.id)
 
-    result = api_client.get_call_list_detail(call_list)
+    result = api_client.call_list_get_detail(call_list)
     for item in result:
         phone = call_list.phones.get(phone_number=item['phone_number'])
         phone.status = item['status']
@@ -133,7 +133,7 @@ def download_call_list(call_list_id: int, verbosity: int = 1):
     call_list.save()
 
 
-def check_call_lists(infinitely: bool = False, sleep_sec: int = 10, verbosity: int = 1):
+def call_lists_check(infinitely: bool = False, sleep_sec: int = 10, verbosity: int = 1):
     while True:
         uncompleted_ids = set(
             models.CallListPhone.objects
@@ -147,7 +147,7 @@ def check_call_lists(infinitely: bool = False, sleep_sec: int = 10, verbosity: i
             if verbosity > 1:
                 print('Downloading call list with id "%s"... ' % call_list_id)
 
-            download_call_list(call_list_id, verbosity=verbosity)
+            call_list_download(call_list_id, verbosity=verbosity)
 
             if verbosity > 1:
                 print('complete.')

@@ -101,7 +101,7 @@ def bind_scenario_rule(scenario_vox_id: int, rule_vox_id: int, bind: bool):
     return response.json()
 
 
-def create_call_list(call_list: models.CallList):
+def call_list_create(call_list: models.CallList):
     url = API_URL + '/CreateCallList'
     params = _get_auth_params()
     params['rule_id'] = call_list.rule.vox_id
@@ -149,7 +149,7 @@ def create_call_list(call_list: models.CallList):
     return result
 
 
-def get_call_list_detail(call_list: models.CallList):
+def call_list_get_detail(call_list: models.CallList):
     url = API_URL + '/GetCallListDetails'
     params = _get_auth_params()
     params['list_id'] = call_list.vox_id
@@ -164,9 +164,10 @@ def get_call_list_detail(call_list: models.CallList):
     for item in result:
         item['custom_data'] = json.loads(item['custom_data'])
         item['phone_number'] = item['custom_data']['phone_number']
+    return result
 
 
-def stop_call_list(call_list: models.CallList):
+def call_list_stop(call_list: models.CallList):
     url = API_URL + '/StopCallListProcessing'
     data = _get_auth_params()
     data['list_id'] = call_list.vox_id

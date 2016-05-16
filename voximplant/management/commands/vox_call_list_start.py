@@ -13,5 +13,5 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         call_list_id = options['call_list_id']
         force = bool(options.get('force'))
-        tools.send_call_list(call_list_id, force)
+        tools.call_list_send(call_list_id, force)
 

@@ -11,5 +11,5 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         call_list_id = options['call_list_id']
-        tools.download_call_list(call_list_id)
+        tools.call_list_download(call_list_id)
 

@@ -11,5 +11,5 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         call_list_id = options['call_list_id']
-        tools.stop_call_list(call_list_id)
+        tools.call_list_stop(call_list_id)
 
