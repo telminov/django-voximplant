@@ -96,6 +96,8 @@ def upload_scenarios():
 
 def call_list_send(call_list_id: int, force=False):
     call_list = models.CallList.objects.get(id=call_list_id)
+    assert call_list.vox_id
+
     if not force and call_list.started:
         raise SendCallListException(
             'Call list with id "%s" already started at "%s"' % (call_list.id, call_list.started))
@@ -108,8 +110,22 @@ def call_list_send(call_list_id: int, force=False):
 
 def call_list_stop(call_list_id: int):
     call_list = models.CallList.objects.get(id=call_list_id)
+    assert call_list.vox_id
+
     api_client.call_list_stop(call_list)
     call_list.canceled = now()
+    call_list.save()
+
+
+def call_list_recover(call_list_id: int):
+    call_list = models.CallList.objects.get(id=call_list_id)
+    assert call_list.vox_id
+
+    if not call_list.canceled:
+        raise SendCallListException('Call list with id "%s" is not stopped' % call_list.id)
+
+    api_client.call_list_recover(call_list)
+    call_list.canceled = None
     call_list.save()
 
 

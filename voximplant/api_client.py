@@ -183,6 +183,22 @@ def call_list_stop(call_list: models.CallList):
     return result
 
 
+def call_list_recover(call_list: models.CallList):
+    url = API_URL + '/RecoverCallList'
+    data = _get_auth_params()
+    data['list_id'] = call_list.vox_id
+
+    response = requests.post(url, data=data)
+
+    if response.status_code != 200:
+        raise VoxApiException('Got status code: %s.' % response.status_code, response=response)
+    elif 'error' in response.json():
+        raise VoxApiException('Recover call list error: %s.' % response.json()['error']['msg'], response=response)
+
+    result = response.json()
+    return result
+
+
 def _get_auth_params() -> dict:
     return {
         'account_id': settings.VOX_USER_ID,

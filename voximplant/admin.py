@@ -14,7 +14,8 @@ class CallListPhoneInline(admin.StackedInline):
 
 class CallList(admin.ModelAdmin):
     inlines = (CallListPhoneInline, )
-    list_display = ('rule', 'created', 'started', 'completed', 'canceled', 'id', 'vox_id', 'external_id', 'phones')
+    list_display = ('rule', 'created', 'started', 'completed', 'canceled', 'downloaded',
+                    'id', 'vox_id', 'external_id', 'phones')
 
     def phones(self, obj):
         return obj.phones.count()
