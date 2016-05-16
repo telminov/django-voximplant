@@ -182,6 +182,7 @@ def call_lists_check(infinitely: bool = False, sleep_sec: int = 10, verbosity: i
     while True:
         uncompleted_ids = set(
             models.CallListPhone.objects
+                .exclude(status__in=(models.CallListPhone.STATUS_PROCESSED, models.CallListPhone.STATUS_ERROR))
                 .filter(call_list__started__isnull=False, completed__isnull=True)
                 .filter(Q(call_list__canceled__isnull=True) | Q(call_list__canceled__gte=F('call_list__downloaded')))  # make last check callist state after canceling
                 .values_list('call_list__id', flat=True))
