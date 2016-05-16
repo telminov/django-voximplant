@@ -1,4 +1,5 @@
 # coding: utf-8
+import time
 # from django.db.models import Q, F
 from django.utils.timezone import now
 from . import models
@@ -104,7 +105,7 @@ def send_call_list(call_list_id: int, force=False):
     call_list.save()
 
 
-def download_call_list(call_list_id: int):
+def download_call_list(call_list_id: int, verbosity: int = 1):
     call_list = models.CallList.objects.get(id=call_list_id)
     if not call_list.vox_id:
         raise DownloadCallListException('Call list with id "%s" have not vox_id' % call_list.id)
@@ -113,9 +114,35 @@ def download_call_list(call_list_id: int):
     for item in result:
         phone = call_list.phones.get(phone_number=item['phone_number'])
         phone.status = item['status']
-        phone.last_attempt = item['last_attempt']
+        phone.last_attempt = item['last_attempt'] + 'Z'
         phone.attempts_left = item['attmepts_left']
         phone.result_data_json = item['result_data']
         if not phone.completed and item['status'] == 'Processed':
             phone.completed = now()
         phone.save()
+
+
+def check_call_list(infinitely: bool = False, sleep_sec: int = 10, verbosity: int = 1):
+    while True:
+        uncompleted_ids = set(models.CallListPhone.objects
+                              .filter(call_list__started__isnull=False, completed__isnull=True)
+                              .values_list('call_list__id', flat=True))
+        if verbosity > 1:
+            print('Started and uncompleted call lists: ', len(uncompleted_ids))
+
+        for call_list_id in uncompleted_ids:
+            if verbosity > 1:
+                print('Downloading call list with id "%s"... ' % call_list_id)
+
+            download_call_list(call_list_id, verbosity=verbosity)
+
+            if verbosity > 1:
+                print('complete.')
+
+        if infinitely:
+            if verbosity > 2:
+                print('Sleep', sleep_sec)
+
+            time.sleep(sleep_sec)
+        else:
+            return

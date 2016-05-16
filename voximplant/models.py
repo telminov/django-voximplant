@@ -3,6 +3,7 @@ import datetime
 import os.path
 from django.db import models
 from django.conf import settings
+from django.db.models import Max
 from django.utils import timezone
 
 
@@ -74,8 +75,16 @@ class CallList(models.Model):
     interval_seconds = models.IntegerField(default=0)
     created = models.DateTimeField(auto_now_add=True)
     started = models.DateTimeField(null=True, blank=True)
-    completed = models.DateTimeField(null=True, blank=True)
     canceled = models.DateTimeField(null=True, blank=True)
+
+    def completed(self):
+        if not self.started:
+            return None
+
+        if self.phones.filter(completed__isnull=True).exists():
+            return None
+
+        return self.phones.aggregate(latest_completed=Max('completed'))['latest_completed']
 
 
 class CallListPhone(models.Model):
@@ -86,7 +95,7 @@ class CallListPhone(models.Model):
     last_attempt = models.DateTimeField(null=True, blank=True)
     attempts_left = models.SmallIntegerField(null=True, blank=True)
     result_data_json = models.TextField(blank=True)
-    completed = models.DateTimeField(null=True)
+    completed = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         unique_together = ('call_list', 'phone_number')
