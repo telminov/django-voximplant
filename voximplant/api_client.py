@@ -164,6 +164,21 @@ def get_call_list_detail(call_list: models.CallList):
     for item in result:
         item['custom_data'] = json.loads(item['custom_data'])
         item['phone_number'] = item['custom_data']['phone_number']
+
+
+def stop_call_list(call_list: models.CallList):
+    url = API_URL + '/StopCallListProcessing'
+    data = _get_auth_params()
+    data['list_id'] = call_list.vox_id
+
+    response = requests.post(url, data=data)
+
+    if response.status_code != 200:
+        raise VoxApiException('Got status code: %s.' % response.status_code, response=response)
+    elif 'error' in response.json():
+        raise VoxApiException('Stop call list error: %s.' % response.json()['error']['msg'], response=response)
+
+    result = response.json()
     return result
 
 

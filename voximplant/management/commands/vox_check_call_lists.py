@@ -4,7 +4,7 @@ from ... import tools
 
 
 class Command(BaseCommand):
-    help = 'Start Call List'
+    help = 'Download call lists state.'
 
     def add_arguments(self, parser):
         parser.add_argument('-i', '--infinitely', dest='infinitely', action='store_true')
@@ -14,5 +14,5 @@ class Command(BaseCommand):
         infinitely = options.get('infinitely')
         sleep_sec = options.get('sleep_sec')
         verbosity = options.get('verbosity')
-        tools.check_call_list(infinitely, sleep_sec=sleep_sec, verbosity=verbosity)
+        tools.check_call_lists(infinitely, sleep_sec=sleep_sec, verbosity=verbosity)
 

@@ -76,6 +76,7 @@ class CallList(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     started = models.DateTimeField(null=True, blank=True)
     canceled = models.DateTimeField(null=True, blank=True)
+    downloaded = models.DateTimeField(null=True, blank=True, help_text='Last datetime of checking state from VoxImplant')
 
     def completed(self):
         if not self.started:

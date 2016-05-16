@@ -1,6 +1,6 @@
 # coding: utf-8
 import time
-# from django.db.models import Q, F
+from django.db.models import Q, F
 from django.utils.timezone import now
 from . import models
 from . import api_client
@@ -97,11 +97,19 @@ def upload_scenarios():
 def send_call_list(call_list_id: int, force=False):
     call_list = models.CallList.objects.get(id=call_list_id)
     if not force and call_list.started:
-        raise SendCallListException('Call list with id "%s" already started at "%s"' % (call_list.id, call_list.started))
+        raise SendCallListException(
+            'Call list with id "%s" already started at "%s"' % (call_list.id, call_list.started))
 
     result = api_client.create_call_list(call_list)
     call_list.vox_id = result['list_id']
     call_list.started = now()
+    call_list.save()
+
+
+def stop_call_list(call_list_id: int):
+    call_list = models.CallList.objects.get(id=call_list_id)
+    api_client.stop_call_list(call_list)
+    call_list.canceled = now()
     call_list.save()
 
 
@@ -121,12 +129,17 @@ def download_call_list(call_list_id: int, verbosity: int = 1):
             phone.completed = now()
         phone.save()
 
+    call_list.downloaded = now()
+    call_list.save()
 
-def check_call_list(infinitely: bool = False, sleep_sec: int = 10, verbosity: int = 1):
+
+def check_call_lists(infinitely: bool = False, sleep_sec: int = 10, verbosity: int = 1):
     while True:
-        uncompleted_ids = set(models.CallListPhone.objects
-                              .filter(call_list__started__isnull=False, completed__isnull=True)
-                              .values_list('call_list__id', flat=True))
+        uncompleted_ids = set(
+            models.CallListPhone.objects
+                .filter(call_list__started__isnull=False, completed__isnull=True)
+                .filter(Q(call_list__canceled__isnull=True) | Q(call_list__canceled__gte=F('call_list__downloaded')))  # make last check callist state after canceling
+                .values_list('call_list__id', flat=True))
         if verbosity > 1:
             print('Started and uncompleted call lists: ', len(uncompleted_ids))
 
