@@ -2,9 +2,18 @@
 from django.contrib import admin
 from . import models
 
-admin.site.register(models.Application)
-admin.site.register(models.Rule)
 admin.site.register(models.Scenario)
+
+
+class RuleInline(admin.StackedInline):
+    model = models.Rule
+    extra = 0
+
+
+class Application(admin.ModelAdmin):
+    inlines = (RuleInline, )
+
+admin.site.register(models.Application, Application)
 
 
 class CallListPhoneInline(admin.StackedInline):

@@ -8,11 +8,11 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         print('Load scenarios...')
-        tools.download_scenarios()
+        tools.scenarios_download()
 
         print('Load applications...')
-        tools.download_apps()
+        tools.apps_download()
 
         print('Load rules...')
-        tools.download_rules()
+        tools.rules_download()
 

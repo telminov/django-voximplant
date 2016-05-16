@@ -38,9 +38,10 @@ class Scenario(models.Model):
 
 
 class Application(models.Model):
-    vox_id = models.BigIntegerField(null=True, unique=True)
-    name = models.CharField(max_length=255, unique=True)
+    vox_id = models.BigIntegerField(null=True, unique=True, blank=True)
+    name = models.CharField(max_length=255, unique=True, default='.voximplant.com')
     modified = models.DateTimeField(auto_now=True)
+    uploaded = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         ordering = ('name', )
@@ -50,11 +51,12 @@ class Application(models.Model):
 
 
 class Rule(models.Model):
-    vox_id = models.BigIntegerField(null=True, unique=True)
+    vox_id = models.BigIntegerField(null=True, unique=True, blank=True)
     application = models.ForeignKey(Application)
     name = models.CharField(max_length=255, unique=True)
-    pattern = models.CharField(max_length=255, blank=True)
+    pattern = models.CharField(max_length=255, default='.*')
     modified = models.DateTimeField(auto_now=True)
+    uploaded = models.DateTimeField(null=True, blank=True)
     scenarios = models.ManyToManyField(Scenario, related_name='rules')
 
     class Meta:

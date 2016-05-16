@@ -14,8 +14,8 @@ class DownloadCallListException(Exception):
     pass
 
 
-def download_scenarios():
-    result = api_client.get_scenarios()
+def scenarios_download():
+    result = api_client.scenarios_get()
 
     incoming_ids = set([i['scenario_id'] for i in result])
     exists_ids = set(models.Scenario.objects.filter(vox_id__isnull=False).values_list('vox_id', flat=True))
@@ -29,8 +29,8 @@ def download_scenarios():
         scenario.save()
 
 
-def download_apps():
-    result = api_client.get_apps()
+def apps_download():
+    result = api_client.apps_get()
 
     incoming_ids = set([i['application_id'] for i in result])
     exists_ids = set(models.Application.objects.filter(vox_id__isnull=False).values_list('vox_id', flat=True))
@@ -44,9 +44,38 @@ def download_apps():
         app.save()
 
 
-def download_rules():
+def apps_upload():
+    apps = models.Application.objects.filter(Q(vox_id__isnull=True) | Q(modified__gte=F('uploaded')))
+    for app in apps:
+        update_params = {'uploaded': now()}
+        result = api_client.app_update_or_create(app)
+        if result.get('application_id'):
+            update_params['vox_id'] = result['application_id']
+        models.Application.objects.filter(id=app.id).update(**update_params)
+
+
+def rules_upload():
+    rules = models.Rule.objects.filter(application__vox_id__isnull=False)\
+        .filter(Q(vox_id__isnull=True) | Q(modified__gte=F('uploaded')))
+
+    for rule in rules:
+        is_new = not rule.vox_id
+
+        update_params = {'uploaded': now()}
+        result = api_client.rule_update_or_create(rule)
+        if result.get('rule_id'):
+            update_params['vox_id'] = result['rule_id']
+        models.Rule.objects.filter(id=rule.id).update(**update_params)
+
+        if is_new:
+            rule = models.Rule.objects.get(id=rule.id)
+            for scenario in rule.scenarios.filter(vox_id__isnull=False):
+                api_client.scenario_bind_rule(scenario.vox_id, rule.vox_id, True)
+
+
+def rules_download():
     for app in models.Application.objects.filter(vox_id__isnull=False):
-        result = api_client.get_rules(app.vox_id)
+        result = api_client.rules_get(app.vox_id)
 
         incoming_ids = set([i['rule_id'] for i in result])
         exists_ids = set(models.Rule.objects.filter(vox_id__isnull=False).values_list('vox_id', flat=True))
@@ -74,29 +103,29 @@ def download_rules():
                 rule.scenarios.add(added_scenario)
 
 
-def upload_scenarios():
+def scenarios_upload():
     # scenarios = models.Scenario.objects.filter(Q(uploaded__isnull=True) | Q(uploaded__lte=F('modified')))
     scenarios = models.Scenario.objects.all()
     for scenario in scenarios:
         if scenario.get_modified() > scenario.uploaded:
             update_params = {'uploaded': now()}
-            result = api_client.update_or_create_scenario(scenario.vox_id)
+            result = api_client.scenario_update_or_create(scenario)
             if result.get('scenario_id'):
                 update_params['vox_id'] = result['scenario_id']
             models.Scenario.objects.filter(id=scenario.id).update(**update_params)
             scenario = models.Scenario.objects.get(id=scenario.id)
 
-        remote_rules = api_client.get_scenario_rules(scenario.vox_id)
-        local_rules = set([r.vox_id for r in scenario.rules.all()])
+        remote_rules = api_client.scenario_get_rules(scenario.vox_id)
+        local_rules = set([r.vox_id for r in scenario.rules.all() if r.vox_id])
         all_rules = local_rules | remote_rules
         for rule_vox_id in all_rules:
             bind = rule_vox_id in local_rules
-            api_client.bind_scenario_rule(scenario.vox_id, rule_vox_id, bind)
+            api_client.scenario_bind_rule(scenario.vox_id, rule_vox_id, bind)
 
 
 def call_list_send(call_list_id: int, force=False):
     call_list = models.CallList.objects.get(id=call_list_id)
-    assert call_list.vox_id
+    assert not call_list.vox_id
 
     if not force and call_list.started:
         raise SendCallListException(

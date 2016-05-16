@@ -8,5 +8,11 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         print('Upload scenarios...')
-        tools.upload_scenarios()
+        tools.scenarios_upload()
+
+        print('Upload applications...')
+        tools.apps_upload()
+
+        print('Upload rules...')
+        tools.rules_upload()
 

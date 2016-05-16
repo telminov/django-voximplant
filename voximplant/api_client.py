@@ -15,7 +15,7 @@ class VoxApiException(Exception):
         self.response = kwargs.pop('response')
 
 
-def get_apps() -> dict:
+def apps_get() -> dict:
     url = API_URL + '/GetApplications'
     params = _get_auth_params()
     response = requests.get(url, params)
@@ -26,7 +26,26 @@ def get_apps() -> dict:
     return response.json()['result']
 
 
-def get_rules(app_vox_id: int) -> dict:
+def app_update_or_create(app: models.Application):
+    data = _get_auth_params()
+    if app.vox_id:
+        url = API_URL + '/SetApplicationInfo'
+        data['application_id'] = app.vox_id
+    else:
+        url = API_URL + '/AddApplication'
+
+    data['application_name'] = app.name
+    response = requests.post(url, data)
+
+    if response.status_code != 200:
+        raise VoxApiException('Got status code: %s.' % response.status_code, response=response)
+    elif 'error' in response.json():
+        raise VoxApiException('Upload error: %s.' % response.json()['error']['msg'], response=response)
+
+    return response.json()
+
+
+def rules_get(app_vox_id: int) -> dict:
     url = API_URL + '/GetRules'
     params = _get_auth_params()
     params['application_id'] = app_vox_id
@@ -39,7 +58,30 @@ def get_rules(app_vox_id: int) -> dict:
     return response.json()['result']
 
 
-def get_scenarios() -> dict:
+def rule_update_or_create(rule: models.Rule):
+    assert rule.application.vox_id
+
+    data = _get_auth_params()
+    if rule.vox_id:
+        url = API_URL + '/SetRuleInfo'
+        data['rule_id'] = rule.vox_id
+    else:
+        url = API_URL + '/AddRule'
+        data['application_id'] = rule.application.vox_id
+
+    data['rule_name'] = rule.name
+    data['rule_pattern'] = rule.pattern
+    response = requests.post(url, data)
+
+    if response.status_code != 200:
+        raise VoxApiException('Got status code: %s.' % response.status_code, response=response)
+    elif 'error' in response.json():
+        raise VoxApiException('Upload error: %s.' % response.json()['error']['msg'], response=response)
+
+    return response.json()
+
+
+def scenarios_get() -> dict:
     url = API_URL + '/GetScenarios'
     params = _get_auth_params()
     response = requests.get(url, params)
@@ -50,19 +92,17 @@ def get_scenarios() -> dict:
     return response.json()['result']
 
 
-def get_scenario_rules(scenario_vox_id: int):
+def scenario_get_rules(scenario_vox_id: int):
     rule_vox_ids = set()
     for app in models.Application.objects.filter(vox_id__isnull=False):
-        for rule_data in get_rules(app.vox_id):
+        for rule_data in rules_get(app.vox_id):
             for scenario_data in rule_data['scenarios']:
                 if scenario_data['scenario_id'] == scenario_vox_id:
                     rule_vox_ids.add(rule_data['rule_id'])
     return rule_vox_ids
 
 
-def update_or_create_scenario(scenario_vox_id: int):
-    scenario = models.Scenario.objects.get(vox_id=scenario_vox_id)
-
+def scenario_update_or_create(scenario: models.Scenario):
     data = _get_auth_params()
     if scenario.vox_id:
         url = API_URL + '/SetScenarioInfo'
@@ -82,7 +122,7 @@ def update_or_create_scenario(scenario_vox_id: int):
     return response.json()
 
 
-def bind_scenario_rule(scenario_vox_id: int, rule_vox_id: int, bind: bool):
+def scenario_bind_rule(scenario_vox_id: int, rule_vox_id: int, bind: bool):
     rule = models.Rule.objects.get(vox_id=rule_vox_id)
 
     url = API_URL + '/BindScenario'
