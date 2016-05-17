@@ -27,6 +27,8 @@ class Scenario(models.Model):
         return text
 
     def get_script_modified(self):
+        if not self.file_path:
+            return None
         mtime = os.path.getmtime(self.file_path)
         dt = datetime.datetime.fromtimestamp(mtime)
         dt = timezone.make_aware(dt)
@@ -34,7 +36,10 @@ class Scenario(models.Model):
 
     def get_modified(self):
         script_modified = self.get_script_modified()
-        return script_modified if self.modified < script_modified else self.modified
+        if script_modified:
+            return min([script_modified, self.modified])
+        else:
+            return self.modified
 
 
 class Application(models.Model):

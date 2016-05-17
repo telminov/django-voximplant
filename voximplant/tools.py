@@ -80,7 +80,7 @@ def rules_download():
         incoming_ids = set([i['rule_id'] for i in result])
         exists_ids = set(models.Rule.objects.filter(vox_id__isnull=False).values_list('vox_id', flat=True))
         deleted_ids = exists_ids - incoming_ids
-        models.Rule.objects.filter(vox_id__in=deleted_ids).delete()
+        models.Rule.objects.filter(application=app, vox_id__in=deleted_ids).delete()
 
         for item_data in result:
             rule, _ = models.Rule.objects.get_or_create(vox_id=item_data['rule_id'], defaults={'application': app})
@@ -104,10 +104,12 @@ def rules_download():
 
 
 def scenarios_upload():
-    # scenarios = models.Scenario.objects.filter(Q(uploaded__isnull=True) | Q(uploaded__lte=F('modified')))
     scenarios = models.Scenario.objects.all()
     for scenario in scenarios:
-        if scenario.get_modified() > scenario.uploaded:
+        if not scenario.file_path:
+            continue
+
+        if not scenario.uploaded or scenario.get_modified() > scenario.uploaded:
             update_params = {'uploaded': now()}
             result = api_client.scenario_update_or_create(scenario)
             if result.get('scenario_id'):

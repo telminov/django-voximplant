@@ -1,4 +1,5 @@
 # coding: utf-8
+import logging
 import tempfile
 
 import os
@@ -8,6 +9,8 @@ from django.conf import settings
 from . import models
 
 API_URL = 'https://api.voximplant.com/platform_api'
+
+logger = logging.getLogger('voximplant.api_client')
 
 
 class VoxApiException(Exception):
@@ -19,11 +22,8 @@ def apps_get() -> dict:
     url = API_URL + '/GetApplications'
     params = _get_auth_params()
     response = requests.get(url, params)
-
-    if response.status_code != 200:
-        raise VoxApiException('Got status code: %s.' % response.status_code, response=response)
-
-    return response.json()['result']
+    result = _process_response(response)
+    return result['result']
 
 
 def app_update_or_create(app: models.Application):
@@ -36,13 +36,8 @@ def app_update_or_create(app: models.Application):
 
     data['application_name'] = app.name
     response = requests.post(url, data)
-
-    if response.status_code != 200:
-        raise VoxApiException('Got status code: %s.' % response.status_code, response=response)
-    elif 'error' in response.json():
-        raise VoxApiException('Upload error: %s.' % response.json()['error']['msg'], response=response)
-
-    return response.json()
+    result = _process_response(response, obj=app)
+    return result
 
 
 def rules_get(app_vox_id: int) -> dict:
@@ -51,16 +46,12 @@ def rules_get(app_vox_id: int) -> dict:
     params['application_id'] = app_vox_id
     params['with_scenarios'] = True
     response = requests.get(url, params)
-
-    if response.status_code != 200:
-        raise VoxApiException('Got status code: %s.' % response.status_code, response=response)
-
-    return response.json()['result']
+    result = _process_response(response)
+    return result['result']
 
 
 def rule_update_or_create(rule: models.Rule):
     assert rule.application.vox_id
-
     data = _get_auth_params()
     if rule.vox_id:
         url = API_URL + '/SetRuleInfo'
@@ -72,24 +63,16 @@ def rule_update_or_create(rule: models.Rule):
     data['rule_name'] = rule.name
     data['rule_pattern'] = rule.pattern
     response = requests.post(url, data)
-
-    if response.status_code != 200:
-        raise VoxApiException('Got status code: %s.' % response.status_code, response=response)
-    elif 'error' in response.json():
-        raise VoxApiException('Upload error: %s.' % response.json()['error']['msg'], response=response)
-
-    return response.json()
+    result = _process_response(response, obj=rule)
+    return result
 
 
 def scenarios_get() -> dict:
     url = API_URL + '/GetScenarios'
     params = _get_auth_params()
     response = requests.get(url, params)
-
-    if response.status_code != 200:
-        raise VoxApiException('Got status code: %s.' % response.status_code, response=response)
-
-    return response.json()['result']
+    result = _process_response(response)
+    return result['result']
 
 
 def scenario_get_rules(scenario_vox_id: int):
@@ -99,6 +82,8 @@ def scenario_get_rules(scenario_vox_id: int):
             for scenario_data in rule_data['scenarios']:
                 if scenario_data['scenario_id'] == scenario_vox_id:
                     rule_vox_ids.add(rule_data['rule_id'])
+
+    logger.debug('Get scenario rules', extra={'scenario_vox_id': scenario_vox_id, 'rule_vox_ids': rule_vox_ids})
     return rule_vox_ids
 
 
@@ -113,13 +98,8 @@ def scenario_update_or_create(scenario: models.Scenario):
     data['scenario_name'] = scenario.name
     data['scenario_script'] = scenario.get_script()
     response = requests.post(url, data)
-
-    if response.status_code != 200:
-        raise VoxApiException('Got status code: %s.' % response.status_code, response=response)
-    elif 'error' in response.json():
-        raise VoxApiException('Upload error: %s.' % response.json()['error']['msg'], response=response)
-
-    return response.json()
+    result = _process_response(response, obj=scenario)
+    return result
 
 
 def scenario_bind_rule(scenario_vox_id: int, rule_vox_id: int, bind: bool):
@@ -132,13 +112,9 @@ def scenario_bind_rule(scenario_vox_id: int, rule_vox_id: int, bind: bool):
     data['application_id'] = rule.application.vox_id
     data['bind'] = int(bind)
     response = requests.post(url, data)
-
-    if response.status_code != 200:
-        raise VoxApiException('Got status code: %s.' % response.status_code, response=response)
-    elif 'error' in response.json():
-        raise VoxApiException('Upload error: %s.' % response.json()['error']['msg'], response=response)
-
-    return response.json()
+    result = _process_response(response,
+                               extra={'scenario_vox_id': scenario_vox_id, 'rule_vox_id': rule_vox_id, 'bind': bind})
+    return result
 
 
 def call_list_create(call_list: models.CallList):
@@ -180,12 +156,7 @@ def call_list_create(call_list: models.CallList):
 
     os.unlink(file_path)
 
-    if response.status_code != 200:
-        raise VoxApiException('Got status code: %s.' % response.status_code, response=response)
-    elif 'error' in response.json():
-        raise VoxApiException('Create call list error: %s.' % response.json()['error']['msg'], response=response)
-
-    result = response.json()
+    result = _process_response(response, obj=call_list)
     return result
 
 
@@ -196,11 +167,7 @@ def call_list_get_detail(call_list: models.CallList):
     params['output'] = 'json'
 
     response = requests.get(url, params=params)
-
-    if response.status_code != 200:
-        raise VoxApiException('Got status code: %s.' % response.status_code, response=response)
-
-    result = response.json()['result']
+    result = _process_response(response, obj=call_list)['result']
     for item in result:
         item['custom_data'] = json.loads(item['custom_data'])
         item['phone_number'] = item['custom_data']['phone_number']
@@ -213,13 +180,7 @@ def call_list_stop(call_list: models.CallList):
     data['list_id'] = call_list.vox_id
 
     response = requests.post(url, data=data)
-
-    if response.status_code != 200:
-        raise VoxApiException('Got status code: %s.' % response.status_code, response=response)
-    elif 'error' in response.json():
-        raise VoxApiException('Stop call list error: %s.' % response.json()['error']['msg'], response=response)
-
-    result = response.json()
+    result = _process_response(response, obj=call_list)
     return result
 
 
@@ -229,13 +190,42 @@ def call_list_recover(call_list: models.CallList):
     data['list_id'] = call_list.vox_id
 
     response = requests.post(url, data=data)
+    result = _process_response(response, obj=call_list)
+    return result
+
+
+def _process_response(response: requests.Response, extra : dict=None, obj: object=None):
+    extra = extra or {}
+    extra.update({
+        'status_code': response.status_code,
+        'url': response.request.url.split('?')[0],
+    })
+
+    if hasattr(response.request, 'data'):
+        extra['data'] = response.request.data
+
+    if hasattr(response.request, 'params'):
+        extra['params'] = response.request.params
+
+    if obj:
+        if hasattr(obj, 'id'):
+            extra['id'] = obj.id
+        if hasattr(obj, 'vox_id'):
+            extra['vox_id'] = obj.vox_id
 
     if response.status_code != 200:
+        extra['response_text'] = response.text
+        logger.error('API request error', extra=extra)
         raise VoxApiException('Got status code: %s.' % response.status_code, response=response)
-    elif 'error' in response.json():
-        raise VoxApiException('Recover call list error: %s.' % response.json()['error']['msg'], response=response)
 
     result = response.json()
+    extra['result'] = result
+
+    if 'error' in result:
+        logger.error('API request error', extra=extra)
+        raise VoxApiException('Upload error: %s.' % result['error']['msg'], response=response)
+
+    logger.debug('API request', extra=extra)
     return result
 
 
