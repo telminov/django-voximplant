@@ -13,6 +13,5 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         infinitely = options.get('infinitely')
         sleep_sec = options.get('sleep_sec')
-        verbosity = options.get('verbosity')
-        tools.call_lists_check(infinitely, sleep_sec=sleep_sec, verbosity=verbosity)
+        tools.call_lists_check(infinitely, sleep_sec=sleep_sec)
 
