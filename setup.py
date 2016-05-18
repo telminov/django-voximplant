@@ -1,21 +1,18 @@
 # coding: utf-8
 # python setup.py sdist register upload
-from distutils.core import setup
+from setuptools import setup, find_packages
 
 setup(
     name='django-voximplant',
     version='0.0.1',
     description='Django application for VoxImplant integration.',
     author='Telminov Sergey',
+    author_email='sergey@telminov.ru',
     url='https://github.com/telminov/django-voximplant',
-    packages=[
-        'voximplant',
-        'voximplant/management',
-        'voximplant/management/commands',
-        'voximplant/migrations',
-    ],
+    include_package_data=True,
+    packages=find_packages(),
     license='The MIT License',
-    install_requires=[
+    requires=[
         'django',
         'requests',
         'pyzmq',
