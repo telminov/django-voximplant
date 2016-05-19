@@ -114,13 +114,13 @@ def rules_download():
             incoming_scenario_ids = set([s['scenario_id'] for s in item_data['scenarios']])
             exists_scenario_ids = set(s.vox_id for s in rule.scenarios.all())
 
-            deleted_scenario_ids = incoming_scenario_ids - exists_scenario_ids
+            deleted_scenario_ids = exists_scenario_ids - incoming_scenario_ids
             deleted_scenarios = models.Scenario.objects.filter(vox_id__in=deleted_scenario_ids)
             for deleted_scenario in deleted_scenarios:
                 rule.scenarios.remove(deleted_scenario)
                 logger.info('Unbind rule and scenario', extra={'rule_id': rule.id, 'scenario_id': deleted_scenario.id})
 
-            added_scenario_ids = exists_scenario_ids - incoming_scenario_ids
+            added_scenario_ids = incoming_scenario_ids - exists_scenario_ids
             added_scenarios = models.Scenario.objects.filter(vox_id__in=added_scenario_ids)
             for added_scenario in added_scenarios:
                 rule.scenarios.add(added_scenario)
