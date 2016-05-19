@@ -148,10 +148,10 @@ def call_list_create(call_list: models.CallList):
         body_content += '\n' + ';'.join(row)
 
     _, file_path = tempfile.mkstemp(prefix='call_list_', suffix='.csv')
-    with open(file_path, mode='w') as f:
-        f.write(body_content)
+    with open(file_path, mode='wb') as f:
+        f.write(body_content.encode('utf-8'))
 
-    with open(file_path, mode='r') as f:
+    with open(file_path, mode='rb') as f:
         response = requests.post(url, params=params, files={'file_content': f})
 
     os.unlink(file_path)
