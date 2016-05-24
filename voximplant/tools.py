@@ -180,6 +180,17 @@ def call_list_stop(call_list_id: int):
     logger.info('Stop call list', extra={'result': result, 'id': call_list.id})
 
 
+def call_list_append(call_list_phone_id: int):
+    call_list_phone = models.CallListPhone.objects.get(id=call_list_phone_id)
+    assert call_list_phone.call_list.vox_id
+
+    result = api_client.call_list_append(call_list_phone)
+    logger.info(
+        'Append phone to call list',
+        extra={'result': result, 'id': call_list_phone.call_list.id, 'phone_number': call_list_phone.phone_number}
+    )
+
+
 def call_list_recover(call_list_id: int):
     call_list = models.CallList.objects.get(id=call_list_id)
     assert call_list.vox_id

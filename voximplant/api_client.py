@@ -1,5 +1,7 @@
 # coding: utf-8
 import logging
+from typing import Iterable
+
 import tempfile
 
 import os
@@ -127,33 +129,9 @@ def call_list_create(call_list: models.CallList):
     params['name'] = call_list.name
     params['interval_seconds'] = call_list.interval_seconds
 
-    phones_data = {}
-    custom_data_keys = set([])
-    for phone in call_list.phones.all():
-        phone_data = json.loads(phone.custom_data_json)
-        custom_data_keys.update(phone_data.keys())
-        phones_data[phone.phone_number] = phone_data
-
-    body_header = ['phone_number'] + list(custom_data_keys)
-    body_data = []
-    for phone_number, custom_data in phones_data.items():
-        row = [phone_number]
-        for key in custom_data_keys:
-            value = custom_data.get(key, '')
-            row.append(value)
-        body_data.append(row)
-
-    body_content = ';'.join(body_header)
-    for row in body_data:
-        body_content += '\n' + ';'.join(row)
-
-    _, file_path = tempfile.mkstemp(prefix='call_list_', suffix='.csv')
-    with open(file_path, mode='wb') as f:
-        f.write(body_content.encode('utf-8'))
-
+    file_path = _create_file_content(call_list.phones.all())
     with open(file_path, mode='rb') as f:
         response = requests.post(url, params=params, files={'file_content': f})
-
     os.unlink(file_path)
 
     result = _process_response(response, obj=call_list)
@@ -184,6 +162,20 @@ def call_list_stop(call_list: models.CallList):
     return result
 
 
+def call_list_append(call_list_phone: models.CallListPhone):
+    url = API_URL + '/AppendToCallList'
+    params = _get_auth_params()
+    params['list_id'] = call_list_phone.call_list.vox_id
+
+    file_path = _create_file_content([call_list_phone])
+    with open(file_path, mode='rb') as f:
+        response = requests.post(url, params=params, files={'file_content': f})
+    os.unlink(file_path)
+
+    result = _process_response(response, obj=call_list_phone.call_list)
+    return result
+
+
 def call_list_recover(call_list: models.CallList):
     url = API_URL + '/RecoverCallList'
     data = _get_auth_params()
@@ -194,7 +186,7 @@ def call_list_recover(call_list: models.CallList):
     return result
 
 
-def _process_response(response: requests.Response, extra : dict=None, obj: object=None):
+def _process_response(response: requests.Response, extra: dict=None, obj: object=None):
     extra = extra or {}
     extra.update({
         'status_code': response.status_code,
@@ -234,3 +226,32 @@ def _get_auth_params() -> dict:
         'account_id': settings.VOX_USER_ID,
         'api_key': settings.VOX_API_KEY,
     }
+
+
+def _create_file_content(phones: Iterable[models.CallListPhone]) -> str:
+    phones_data = {}
+    custom_data_keys = set([])
+    for phone in phones:
+        phone_data = json.loads(phone.custom_data_json)
+        custom_data_keys.update(phone_data.keys())
+        phones_data[phone.phone_number] = phone_data
+
+    body_header = ['phone_number'] + list(custom_data_keys)
+    body_data = []
+    for phone_number, custom_data in phones_data.items():
+        row = [phone_number]
+        for key in custom_data_keys:
+            value = custom_data.get(key, '')
+            row.append(value)
+        body_data.append(row)
+
+    body_content = ';'.join(body_header)
+    for row in body_data:
+        body_content += '\n' + ';'.join(row)
+
+    _, file_path = tempfile.mkstemp(prefix='call_list_', suffix='.csv')
+    with open(file_path, mode='wb') as f:
+        f.write(body_content.encode('utf-8'))
+
+    return file_path
+
