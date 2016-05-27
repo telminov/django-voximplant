@@ -98,12 +98,14 @@ class CallList(models.Model):
 class CallListPhone(models.Model):
     STATUS_NEW = 'New'
     STATUS_IN_PROGRESS = 'In progress'
+    STATUS_CANCELED = 'Cancelled'
     STATUS_PROCESSED = 'Processed'
     STATUS_ERROR = 'Error'
     STATUS_CHOICES = (
         ('', ''),
         (STATUS_NEW, STATUS_NEW),
         (STATUS_IN_PROGRESS, STATUS_IN_PROGRESS),
+        (STATUS_CANCELED, STATUS_CANCELED),
         (STATUS_PROCESSED, STATUS_PROCESSED),
         (STATUS_ERROR, STATUS_ERROR),
     )
