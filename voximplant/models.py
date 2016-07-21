@@ -37,7 +37,7 @@ class Scenario(models.Model):
     def get_modified(self):
         script_modified = self.get_script_modified()
         if script_modified:
-            return min([script_modified, self.modified])
+            return max([script_modified, self.modified])
         else:
             return self.modified
 
