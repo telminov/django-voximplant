@@ -1,4 +1,5 @@
 # coding: utf-8
+import json
 import logging
 import time
 from django.db.models import Q, F
@@ -216,9 +217,14 @@ def call_list_download(call_list_id: int):
         phone.status = item['status']
         phone.last_attempt = item['last_attempt'] + 'Z' if item['last_attempt'] else None
         phone.attempts_left = item['attmepts_left']
-        phone.result_data_json = item.get('result_data', '')
         if not phone.completed and item['status'] == 'Processed':
             phone.completed = now()
+
+        phone.result_data_json = item.get('result_data', '')
+        if phone.result_data_json:
+            result_data = json.loads(phone.result_data_json)
+            phone.duration = result_data.get('duration', None)
+
         phone.save()
 
     call_list.downloaded = now()

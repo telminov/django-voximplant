@@ -118,6 +118,7 @@ class CallListPhone(models.Model):
     attempts_left = models.SmallIntegerField(null=True, blank=True)
     result_data_json = models.TextField(blank=True)
     completed = models.DateTimeField(null=True, blank=True)
+    duration = models.IntegerField(null=True, blank=True)
 
     class Meta:
         unique_together = ('call_list', 'phone_number')
