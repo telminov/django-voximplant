@@ -247,7 +247,7 @@ def _create_file_content(phones: Iterable[models.CallListPhone]) -> str:
 
     body_content = ';'.join(body_header)
     for row in body_data:
-        body_content += '\n' + ';'.join(map(str, row))
+        body_content += '\n' + ';'.join([str(i or '') for i in row])
 
     _, file_path = tempfile.mkstemp(prefix='call_list_', suffix='.csv')
     with open(file_path, mode='wb') as f:
