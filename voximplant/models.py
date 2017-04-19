@@ -119,6 +119,7 @@ class CallListPhone(models.Model):
     result_data_json = models.TextField(blank=True)
     completed = models.DateTimeField(null=True, blank=True)
     duration = models.IntegerField(null=True, blank=True)
+    cost = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
 
     class Meta:
         unique_together = ('call_list', 'phone_number')

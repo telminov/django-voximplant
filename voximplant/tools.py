@@ -224,6 +224,7 @@ def call_list_download(call_list_id: int):
         if phone.result_data_json:
             result_data = json.loads(phone.result_data_json)
             phone.duration = result_data.get('duration', None)
+            phone.cost = result_data.get('cost', None)
 
         phone.save()
 
