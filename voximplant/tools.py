@@ -2,8 +2,8 @@
 import json
 import logging
 import time
-
 import os
+
 from django.db.models import Q, F
 from django.utils.timezone import now
 from django.conf import settings
@@ -32,7 +32,6 @@ def scenarios_download():
         logger.info('Delete scenarios', extra={'deleted_ids': deleted_ids})
 
     for item_data in result:
-
         scenario, created = models.Scenario.objects.get_or_create(vox_id=item_data['scenario_id'])
         scenario.name = item_data['scenario_name']
         scenario.modified = item_data['modified'] + 'Z'
@@ -179,8 +178,6 @@ def call_list_send(call_list_id: int, force=False):
     call_list.save()
     logger.info('Send call list', extra={'result': result, 'id': call_list.id})
 
-    return result['result']
-
 
 def call_list_stop(call_list_id: int):
     call_list = models.CallList.objects.get(id=call_list_id)
@@ -190,8 +187,6 @@ def call_list_stop(call_list_id: int):
     call_list.canceled = now()
     call_list.save()
     logger.info('Stop call list', extra={'result': result, 'id': call_list.id})
-
-    return result['result']
 
 
 def call_list_append(call_list_phone_id: int):
@@ -203,8 +198,6 @@ def call_list_append(call_list_phone_id: int):
         'Append phone to call list',
         extra={'result': result, 'id': call_list_phone.call_list.id, 'phone_number': call_list_phone.phone_number}
     )
-
-    return result['result']
 
 
 def call_list_recover(call_list_id: int):
