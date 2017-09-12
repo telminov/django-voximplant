@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='django-voximplant',
-    version='0.0.7',
+    version='0.0.8',
     description='Django application for VoxImplant integration.',
     author='Telminov Sergey',
     author_email='sergey@telminov.ru',
