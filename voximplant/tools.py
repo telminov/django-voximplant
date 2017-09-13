@@ -2,8 +2,11 @@
 import json
 import logging
 import time
+import os
+
 from django.db.models import Q, F
 from django.utils.timezone import now
+from django.conf import settings
 from . import models
 from . import api_client
 
@@ -32,6 +35,11 @@ def scenarios_download():
         scenario, created = models.Scenario.objects.get_or_create(vox_id=item_data['scenario_id'])
         scenario.name = item_data['scenario_name']
         scenario.modified = item_data['modified'] + 'Z'
+
+        file_path = os.path.join(settings.VOX_SCRIPTS_PATH, item_data['scenario_name'] + '.js')
+        if os.path.exists(file_path):
+            scenario.file_path = file_path
+
         scenario.save()
 
         create_or_update = 'Created' if created else 'Updated'
